@@ -14,7 +14,7 @@ import (
 	"github.com/taebow/evosnake/pkg/nn"
 )
 
-var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 24, 12, 8, 4)
+var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 24, 24, 4)
 
 type NNDriver struct {
 	nn *nn.NeuralNet
@@ -44,6 +44,7 @@ func (d *NNDriver) GetDirection(s *game.Snake, g *game.Game) game.Direction {
 	}
 	return direction
 }
+
 
 
 func newPopulation(genes, size int) [][]float64 {
@@ -104,11 +105,10 @@ func min(s []int) int {
 
 func train(nGenerations int) []float64 {
 	n := len(nn.NewNN(nnConfig).GetRawWeights())
-	println(n)
 	pop := newPopulation(n, 100)
 	var popBest [][]float64
 	var popFitness, fitBest []int
-	// var record []float64
+	var record []float64
 	var fitnessRecord int = math.MinInt
 	for nGen := 1; nGen <= nGenerations; nGen++ {
 		popFitness = make([]int, 100)
@@ -118,8 +118,8 @@ func train(nGenerations int) []float64 {
 		if max(popFitness) > min(fitBest) || len(fitBest) == 0 {
 			popBest, fitBest = genetic.SelectBest(pop, popFitness, 10)
 		}
-		if _, f := genetic.SelectBest(popBest, fitBest, 1); f[0] > fitnessRecord {
-			// record = r[0]
+		if r, f := genetic.SelectBest(popBest, fitBest, 1); f[0] > fitnessRecord {
+			record = r[0]
 			fitnessRecord = f[0]
 		} 
 		fmt.Printf("Trained generation %v, Record: %v\n", nGen, fitnessRecord)
@@ -127,12 +127,11 @@ func train(nGenerations int) []float64 {
 		genetic.Mutate(popChild, 20)
 		pop = append(popBest, popChild...)
 	}
-	popBest, _ = genetic.SelectBest(popBest, fitBest, 1)
-	return popBest[0]
+	return record
 }
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	best := train(5000)
+	best := train(2000)
 	PlaySnake(best)
 }

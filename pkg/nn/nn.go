@@ -53,23 +53,20 @@ func sigmoid(x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-func (nn *NeuralNet) Predict(x *mat.Dense) *mat.Dense {
+func (nn *NeuralNet) Predict(inputs *mat.Dense) *mat.Dense {
 
-	output := x
+	var outputs *mat.Dense
 	sigm := func(_, _ int, v float64) float64 {return sigmoid(v)}
 	for _, dense := range nn.weights {
 		r, c := dense.Dims()
-		temp := new(mat.Dense)
-		temp.Mul(output, dense.Slice(0, r-1, 0, c))
-		output = temp
-		temp = new(mat.Dense)
-		temp.Add(output, dense.Slice(r-1, r, 0, c))
-		output = temp
-		temp = new(mat.Dense)
-		temp.Apply(sigm, output)
-		output = temp
+		outMul, outBias := new(mat.Dense), new(mat.Dense)
+		outputs = new(mat.Dense)
+		outMul.Mul(inputs, dense.Slice(0, r-1, 0, c))
+		outBias.Add(outMul, dense.Slice(r-1, r, 0, c))
+		outputs.Apply(sigm, outBias)
+		inputs = outputs
 	}
-	return output
+	return outputs
 
 
 	// // Complete the feed forward process.
