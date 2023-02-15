@@ -10,6 +10,9 @@ type Driver interface {
 	GetDirection(*Snake, *Game) Direction
 }
 
+type MultiDriver interface {
+	GetDirections([]*Game) [][]Direction
+}
 
 type KeyboardDriver struct {
 	buffer []Direction
