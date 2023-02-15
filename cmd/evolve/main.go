@@ -14,20 +14,22 @@ import (
 	"github.com/taebow/evosnake/pkg/nn"
 )
 
+var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 24, 12, 8, 4)
+
 type NNDriver struct {
 	nn *nn.NeuralNet
 }
 
 func newNNDriver(nnConfig *nn.NeuralNetConfig, weights []float64) *NNDriver {
 	nn := nn.NewNN(nnConfig)
-	nn.InitFromSlice(weights)
+	nn.InitFromRawWeights(weights)
 	return &NNDriver{nn: nn}
 }
 
 func (d *NNDriver) GetDirection(s *game.Snake, g *game.Game) game.Direction {
 	inputs := s.See(g.Foods[0], g.Board)
 	inputsMat := mat.NewDense(1, len(inputs), inputs)
-	outputs, _ := d.nn.Predict(inputsMat)
+	outputs := d.nn.Predict(inputsMat)
 	directionInt := argMax(outputs.RawMatrix().Data)
 	var direction game.Direction
 	switch directionInt {
@@ -43,6 +45,7 @@ func (d *NNDriver) GetDirection(s *game.Snake, g *game.Game) game.Direction {
 	return direction
 }
 
+
 func newPopulation(genes, size int) [][]float64 {
 	pop := make([][]float64, size)
 	for i := range pop {
@@ -55,7 +58,6 @@ func newPopulation(genes, size int) [][]float64 {
 }
 
 func PlayGame(rounds int, individual []float64) int {
-	nnConfig := nn.NewNNConfig(8, 4, 50)
 	nnDriver := newNNDriver(nnConfig, individual)
 	g := game.NewGame(50, 50, 20, 1, 1)
 	g.Run(rounds, -1, false, []game.Driver{nnDriver})
@@ -63,7 +65,6 @@ func PlayGame(rounds int, individual []float64) int {
 }
 
 func PlaySnake(individual []float64) {
-	nnConfig := nn.NewNNConfig(8, 4, 50)
 	nnDriver := newNNDriver(nnConfig, individual)
 	g := game.NewGame(50, 50, 5, 1, 1)
 	g.Run(-1, 25, true, []game.Driver{nnDriver})
@@ -102,7 +103,9 @@ func min(s []int) int {
 }
 
 func train(nGenerations int) []float64 {
-	pop := newPopulation(9*50+51*4, 100)
+	n := len(nn.NewNN(nnConfig).GetRawWeights())
+	println(n)
+	pop := newPopulation(n, 100)
 	var popBest [][]float64
 	var popFitness, fitBest []int
 	// var record []float64

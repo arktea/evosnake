@@ -1,125 +1,121 @@
 package nn
 
 import (
-	"errors"
+	// "errors"
 	"math"
-	"math/rand"
-	"time"
+	// "math/rand"
+	// "time"
 
 	"gonum.org/v1/gonum/mat"
 )
 
 type NeuralNetConfig struct {
-	inputNeurons, hiddenNeurons, outputNeurons int
+	layers []int
 }
 
 type NeuralNet struct {
-	wHidden, bHidden, wOut, bOut *mat.Dense
-	config *NeuralNetConfig
+	weights []*mat.Dense
 }
 
-func NewNNConfig(inputNeurons, outputNeurons, hiddenNeurons int) *NeuralNetConfig {
-	return &NeuralNetConfig{
-		inputNeurons: inputNeurons, 
-		outputNeurons: outputNeurons, 
-		hiddenNeurons: hiddenNeurons,
-	}
+func NewNNConfig(layers ...int) *NeuralNetConfig {
+	return &NeuralNetConfig{layers: layers}
 }
 
 func NewNN(config *NeuralNetConfig) *NeuralNet {
-	wHidden := mat.NewDense(config.inputNeurons, config.hiddenNeurons, nil)
-	bHidden := mat.NewDense(1, config.hiddenNeurons, nil)
-	wOut := mat.NewDense(config.hiddenNeurons, config.outputNeurons, nil)
-	bOut := mat.NewDense(1, config.outputNeurons, nil)
-	return &NeuralNet{wHidden: wHidden, bHidden: bHidden, wOut: wOut, bOut: bOut, config: config}
+	var weights []*mat.Dense
+	for i := range config.layers[:len(config.layers)-1] {
+		in, out := config.layers[i], config.layers[i+1]
+		weights = append(weights, mat.NewDense(in+1, out, nil))
+	}
+	return &NeuralNet{weights: weights}
 }
 
-func (nn *NeuralNet) totalNeurons() (res int) {
-	for _, dense := range []*mat.Dense{nn.wHidden, nn.bHidden, nn.wOut, nn.bOut} {
-		r, c := dense.Dims()
-		res += r*c
+func (nn *NeuralNet) GetRawWeights() []float64 {
+	var rawWeights []float64
+	for _, dense := range nn.weights {
+		rawWeights = append(rawWeights, dense.RawMatrix().Data...)
 	}
-	return
+	return rawWeights
+}
+
+func (nn *NeuralNet) InitFromRawWeights(weights []float64) {
+	var index int
+	for _, dense := range nn.weights {
+		data := dense.RawMatrix().Data
+		for i := range data {
+			data[i] = weights[index]
+			index++
+		}
+	}
 }
 
 func sigmoid(x float64) float64 {
 	return 1.0 / (1.0 + math.Exp(-x))
 }
 
-func (nn *NeuralNet) Predict(x *mat.Dense) (*mat.Dense, error) {
+func (nn *NeuralNet) Predict(x *mat.Dense) *mat.Dense {
 
-	// Check to make sure that our neuralNet value
-	// represents a trained model.
-	if nn.wHidden == nil || nn.wOut == nil {
-		return nil, errors.New("the supplied weights are empty")
+	output := x
+	sigm := func(_, _ int, v float64) float64 {return sigmoid(v)}
+	for _, dense := range nn.weights {
+		r, c := dense.Dims()
+		temp := new(mat.Dense)
+		temp.Mul(output, dense.Slice(0, r-1, 0, c))
+		output = temp
+		temp = new(mat.Dense)
+		temp.Add(output, dense.Slice(r-1, r, 0, c))
+		output = temp
+		temp = new(mat.Dense)
+		temp.Apply(sigm, output)
+		output = temp
 	}
-	if nn.bHidden == nil || nn.bOut == nil {
-		return nil, errors.New("the supplied biases are empty")
-	}
+	return output
 
-	// Define the output of the neural network.
-	output := new(mat.Dense)
 
-	// Complete the feed forward process.
-	hiddenLayerInput := new(mat.Dense)
-	hiddenLayerInput.Mul(x, nn.wHidden)
-	addBHidden := func(_, col int, v float64) float64 { return v + nn.bHidden.At(0, col) }
-	hiddenLayerInput.Apply(addBHidden, hiddenLayerInput)
+	// // Complete the feed forward process.
+	// hiddenLayerInput := new(mat.Dense)
+	// hiddenLayerInput.Mul(x, nn.wHidden)
+	// addBHidden := func(_, col int, v float64) float64 { return v + nn.bHidden.At(0, col) }
+	// hiddenLayerInput.Apply(addBHidden, hiddenLayerInput)
 
-	hiddenLayerActivations := new(mat.Dense)
-	applySigmoid := func(_, _ int, v float64) float64 { return sigmoid(v) }
-	hiddenLayerActivations.Apply(applySigmoid, hiddenLayerInput)
+	// hiddenLayerActivations := new(mat.Dense)
+	// applySigmoid := func(_, _ int, v float64) float64 { return sigmoid(v) }
+	// hiddenLayerActivations.Apply(applySigmoid, hiddenLayerInput)
 
-	outputLayerInput := new(mat.Dense)
-	outputLayerInput.Mul(hiddenLayerActivations, nn.wOut)
-	addBOut := func(_, col int, v float64) float64 { return v + nn.bOut.At(0, col) }
-	outputLayerInput.Apply(addBOut, outputLayerInput)
-	output.Apply(applySigmoid, outputLayerInput)
+	// outputLayerInput := new(mat.Dense)
+	// outputLayerInput.Mul(hiddenLayerActivations, nn.wOut)
+	// addBOut := func(_, col int, v float64) float64 { return v + nn.bOut.At(0, col) }
+	// outputLayerInput.Apply(addBOut, outputLayerInput)
+	// output.Apply(applySigmoid, outputLayerInput)
 
-	return output, nil
+	// return output, nil
 }
 
-func (nn *NeuralNet) ToSlice() []float64 {
-	wHiddenRaw := nn.wHidden.RawMatrix().Data
-	bHiddenRaw := nn.bHidden.RawMatrix().Data
-	wOutRaw := nn.wOut.RawMatrix().Data
-	bOutRaw := nn.bOut.RawMatrix().Data
-	res := make([]float64, nn.totalNeurons())
-	i := 0
-	for _, param := range [][]float64{wHiddenRaw, bHiddenRaw, wOutRaw, bOutRaw} {
-		for _, p := range param {
-			res[i] = p
-			i++
-		}
-	}
-	return res
-}
+// func (nn *NeuralNet) InitFromSlice(s []float64) {
+// 	wHiddenRaw := nn.wHidden.RawMatrix().Data
+// 	bHiddenRaw := nn.bHidden.RawMatrix().Data
+// 	wOutRaw := nn.wOut.RawMatrix().Data
+// 	bOutRaw := nn.bOut.RawMatrix().Data
+// 	index := 0
+// 	for _, param := range [][]float64{
+// 		wHiddenRaw,
+// 		bHiddenRaw,
+// 		wOutRaw,
+// 		bOutRaw,
+// 	} {
+// 		for i := range param {
+// 			param[i] = s[index]
+// 			index++
+// 		}
+// 	}
+// }
 
-func (nn *NeuralNet) InitFromSlice(s []float64) {
-	wHiddenRaw := nn.wHidden.RawMatrix().Data
-	bHiddenRaw := nn.bHidden.RawMatrix().Data
-	wOutRaw := nn.wOut.RawMatrix().Data
-	bOutRaw := nn.bOut.RawMatrix().Data
-	index := 0
-	for _, param := range [][]float64{
-		wHiddenRaw,
-		bHiddenRaw,
-		wOutRaw,
-		bOutRaw,
-	} {
-		for i := range param {
-			param[i] = s[index]
-			index++
-		}
-	}
-}
-
-func (nn *NeuralNet) InitRandom() {
-	randSource := rand.NewSource(time.Now().UnixNano())
-	randGen := rand.New(randSource)
-	s := make([]float64, nn.totalNeurons())
-	for i := range s {
-		s[i] = (randGen.Float64()*2)-1
-	}
-	nn.InitFromSlice(s)
-}
+// func (nn *NeuralNet) InitRandom() {
+// 	randSource := rand.NewSource(time.Now().UnixNano())
+// 	randGen := rand.New(randSource)
+// 	s := make([]float64, nn.totalNeurons())
+// 	for i := range s {
+// 		s[i] = (randGen.Float64()*2)-1
+// 	}
+// 	nn.InitFromSlice(s)
+// }
