@@ -2,8 +2,13 @@ package persist
 
 import (
 	"os"
+	"time"
+	"strings"
+	"fmt"
 	"encoding/json"
 )
+
+const DT_LAYOUT = "20060102-150405"
 
 type Model struct {
 	Config  []int     `json:"config"`
@@ -15,8 +20,7 @@ func NewModel(config []int, weights []float64) *Model {
 }
 
 func Save(name string, model *Model) {
-	filename := name + ".json"
-	f, err := os.Create(filename)
+	f, err := os.Create(getFileName(name))
 	if err != nil {
 		panic(err)
 	}
@@ -26,8 +30,7 @@ func Save(name string, model *Model) {
 	}
 }
 
-func Load(name string) *Model {
-	filename := name + ".json"
+func Load(filename string) *Model {
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -38,4 +41,8 @@ func Load(name string) *Model {
 		panic(err)
 	}
 	return &model
+}
+
+func getFileName(name string) (filename string) {
+	return fmt.Sprintf("%v-%v.model.json", strings.TrimSpace(name), time.Now().Format(DT_LAYOUT))
 }

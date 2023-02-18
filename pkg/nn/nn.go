@@ -7,7 +7,7 @@ import (
 )
 
 type NeuralNetConfig struct {
-	layers []int
+	Layers []int
 }
 
 type NeuralNet struct {
@@ -15,22 +15,22 @@ type NeuralNet struct {
 }
 
 func NewNNConfig(layers ...int) *NeuralNetConfig {
-	return &NeuralNetConfig{layers: layers}
+	return &NeuralNetConfig{Layers: layers}
 }
 
 func (c *NeuralNetConfig) RawSize() (size int) {
-	for i := range c.layers[:len(c.layers)-1] {
-		size += (c.layers[i]+1)*c.layers[i+1]
+	for i := range c.Layers[:len(c.Layers)-1] {
+		size += (c.Layers[i]+1)*c.Layers[i+1]
 	}
 	return
 }
 
 func NewNN(config *NeuralNetConfig, rawWeights []float64) *NeuralNet {
-	flowSize := len(config.layers)-1
+	flowSize := len(config.Layers)-1
 	weights := make([]*mat.Dense, flowSize)
 	var index int
-	for i := range config.layers[:flowSize] {
-		in, out := config.layers[i], config.layers[i+1]
+	for i := range config.Layers[:flowSize] {
+		in, out := config.Layers[i], config.Layers[i+1]
 		weights[i] = mat.NewDense(in+1, out, rawWeights[index:index+(in+1)*out])
 		index += (in+1)*out
 	}

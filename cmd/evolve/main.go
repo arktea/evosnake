@@ -11,9 +11,10 @@ import (
 	"github.com/taebow/evosnake/pkg/genetic"
 	"github.com/taebow/evosnake/pkg/nn"
 	"github.com/taebow/evosnake/pkg/nndriver"
+	"github.com/taebow/evosnake/pkg/persist"
 )
 
-var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 16, 8, 4)
+var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 12, 12, 4)
 
 
 func newPopulation(nnConfig *nn.NeuralNetConfig, size int) [][]float64 {
@@ -142,7 +143,9 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	f := func (individual []float64) int {return MultiPlayGames(2000, individual, 5)}
 	// f := func (individual []float64) int {return PlayGame(5000, individual)}
-	records, fitRecords := train(200, 100, 0.05, 0.1, f)
+	records, fitRecords := train(2000, 100, 0.05, 0.1, f)
 	record, _ := genetic.SelectNBest(records, fitRecords, 1)
+	model := persist.NewModel(nnConfig.Layers, record[0])
+	persist.Save("killer", model)
 	PlaySnakes(record)
 }

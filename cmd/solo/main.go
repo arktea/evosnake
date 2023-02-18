@@ -3,7 +3,6 @@ package main
 import (
 	"math/rand"
 	"time"
-
 	"github.com/taebow/evosnake/pkg/game"
 )
 
