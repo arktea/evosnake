@@ -1,4 +1,4 @@
-package persist
+package nn
 
 import (
 	"os"
@@ -10,16 +10,7 @@ import (
 
 const DT_LAYOUT = "20060102-150405"
 
-type Model struct {
-	Config  []int     `json:"config"`
-	Weights []float64 `json:"weights"`
-}
-
-func NewModel(config []int, weights []float64) *Model {
-	return &Model{Config: config, Weights: weights}
-}
-
-func Save(name string, model *Model) {
+func SaveModel(name string, model *Model) {
 	f, err := os.Create(getFileName(name))
 	if err != nil {
 		panic(err)
@@ -30,7 +21,7 @@ func Save(name string, model *Model) {
 	}
 }
 
-func Load(filename string) *Model {
+func LoadModel(filename string) *Model {
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)

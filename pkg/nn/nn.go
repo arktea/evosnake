@@ -6,32 +6,17 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type NeuralNetConfig struct {
-	Layers []int
-}
-
 type NeuralNet struct {
 	weights []*mat.Dense
 }
 
-func NewNNConfig(layers ...int) *NeuralNetConfig {
-	return &NeuralNetConfig{Layers: layers}
-}
-
-func (c *NeuralNetConfig) RawSize() (size int) {
-	for i := range c.Layers[:len(c.Layers)-1] {
-		size += (c.Layers[i]+1)*c.Layers[i+1]
-	}
-	return
-}
-
-func NewNN(config *NeuralNetConfig, rawWeights []float64) *NeuralNet {
-	flowSize := len(config.Layers)-1
+func NewNN(model *Model) *NeuralNet {
+	flowSize := len(model.Config)-1
 	weights := make([]*mat.Dense, flowSize)
 	var index int
-	for i := range config.Layers[:flowSize] {
-		in, out := config.Layers[i], config.Layers[i+1]
-		weights[i] = mat.NewDense(in+1, out, rawWeights[index:index+(in+1)*out])
+	for i := range model.Config[:flowSize] {
+		in, out := model.Config[i], model.Config[i+1]
+		weights[i] = mat.NewDense(in+1, out, model.Weights[index:index+(in+1)*out])
 		index += (in+1)*out
 	}
 	return &NeuralNet{weights: weights}

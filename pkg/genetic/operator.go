@@ -5,8 +5,8 @@ import (
 	"math/rand"
 )
 
-func SelectNBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) {
-	bestFitness, bestIndividual := make([]int, n), make([][]float64, n)
+func selectNBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) {
+	bestFitness, bestSolution := make([]int, n), make([][]float64, n)
 	for i := range bestFitness {
 		bestFitness[i] = math.MinInt
 	}
@@ -21,17 +21,19 @@ func SelectNBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) 
 		}
 		if fitness > bestFitness[minBestIndex] {
 			bestFitness[minBestIndex] = fitness
-			bestIndividual[minBestIndex] = pop[i]
+			bestSolution[minBestIndex] = pop[i]
 		}
 	}
-	return bestIndividual, bestFitness
+	return bestSolution, bestFitness
 }
 
-func SelectRateBest(pop [][]float64, popFitness []int, rate float64) ([][]float64, []int) {
-	return SelectNBest(pop, popFitness, int(float64(len(pop)) * rate))
+func SelectBest(pop [][]float64, popFitness []int) ([]float64, int) {
+	best, fitness := selectNBest(pop, popFitness, 1)
+	return best[0], fitness[0]
 }
 
-func Crossover(pop [][]float64, n int) [][]float64 {
+
+func crossover(pop [][]float64, n int) [][]float64 {
 	res := make([][]float64, n)
 	for i := range res {
 		parent1 := pop[rand.Intn(len(pop))]
@@ -49,7 +51,7 @@ func Crossover(pop [][]float64, n int) [][]float64 {
 	return res
 }
 
-func Mutate(pop [][]float64, rate float64) {
+func mutate(pop [][]float64, rate float64) {
 	n := int(float64(len(pop)) * rate)
 	for i := range pop {
 		for j := 0; j < rand.Intn(n); j++ {

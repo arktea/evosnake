@@ -9,8 +9,8 @@ type NNDriver struct {
 	nn *nn.NeuralNet
 }
 
-func NewNNDriver(nnConfig *nn.NeuralNetConfig, weights []float64) *NNDriver {
-	nn := nn.NewNN(nnConfig, weights)
+func NewNNDriver(model *nn.Model) *NNDriver {
+	nn := nn.NewNN(model)
 	return &NNDriver{nn: nn}
 }
 

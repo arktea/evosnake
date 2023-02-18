@@ -9,10 +9,10 @@ type MultiDriver struct {
 	nn []*nn.NeuralNet
 }
 
-func NewMultiDriver(nnConfigs []*nn.NeuralNetConfig, weights [][]float64) *MultiDriver {
-	neuralNets := make([]*nn.NeuralNet, len(nnConfigs))
-	for i, config := range nnConfigs {
-		neuralNets[i] = nn.NewNN(config, weights[i])
+func NewMultiDriver(models []*nn.Model) *MultiDriver {
+	neuralNets := make([]*nn.NeuralNet, len(models))
+	for i, model := range models {
+		neuralNets[i] = nn.NewNN(model)
 	}
 	return &MultiDriver{nn: neuralNets}
 }
