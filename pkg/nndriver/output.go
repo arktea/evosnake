@@ -1,25 +1,27 @@
 package nndriver
 
-import "github.com/taebow/evosnake/pkg/game"
+import (
+	"math"
+
+	"github.com/taebow/evosnake/pkg/game"
+)
 
 func outputToDirection(output []float64) game.Direction {
-	directionInt := argMax(output)
-	var direction game.Direction
-	switch directionInt {
+	switch argMax(output) {
 	case 0:
-		direction = game.Up
+		return game.Up
 	case 1:
-		direction = game.Down
+		return game.Down
 	case 2:
-		direction = game.Left
+		return game.Left
 	case 3:
-		direction = game.Right
+		return game.Right
 	}
-	return direction
+	return game.Direction{}
 }
 
 func argMax(s []float64) int {
-	var max float64
+	max := -math.MaxFloat64
 	var index int
 	for i := range s {
 		if s[i] > max {

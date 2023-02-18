@@ -12,7 +12,7 @@ func gameToInput(s *game.Snake, food *game.Element, b *game.Board) []float64 {
 		res[1] = float64(s.Direction.Y)
 	}
 	head := s.Body[0]
-	for i, foodRelPos := range [...]int{
+	for i, foodRelPos := range []int{
 		food.X - head.X,
 		food.Y - head.Y,
 	}{

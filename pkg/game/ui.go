@@ -16,7 +16,7 @@ func NewUI(width, height, tileSize int) *UI {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		panic(err)
 	}
-	
+
 	window, err := sdl.CreateWindow("evosnake", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		int32(width * tileSize), int32(height * tileSize), sdl.WINDOW_SHOWN)
 	if err != nil {

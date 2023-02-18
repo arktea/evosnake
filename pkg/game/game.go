@@ -1,7 +1,13 @@
 package game
 
-import "time"
+import (
+	"time"
+	"math/rand"
+)
 
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 type Game struct {
 	initSnakeSize int
@@ -54,7 +60,7 @@ func (g *Game) update(directions ...Direction) {
 
 func (g *Game) getDirections(drivers []Driver) []Direction {
 	directions := make([]Direction, len(drivers))
-	for i, driver := range(drivers) {
+	for i, driver := range drivers {
 		directions[i] = driver.GetDirection(g.Snakes[i], g)
 	}
 	return directions

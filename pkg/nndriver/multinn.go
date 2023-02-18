@@ -18,15 +18,14 @@ func NewMultiDriver(models []*nn.Model) *MultiDriver {
 }
 
 func (md *MultiDriver) GetDirections(games []*game.Game) [][]game.Direction {
-	inputs := make([][][]float64, len(md.nn))
 	outputs := make([][][]float64, len(md.nn))
 	directions := make([][]game.Direction, len(games))
 	for i, nn := range md.nn {
-		inputs[i] = make([][]float64, len(games))
+		inputs := make([][]float64, len(games))
 		for j, g := range games {
-			inputs[i][j] =  gameToInput(g.Snakes[i], g.Foods[0], g.Board)
+			inputs[j] =  gameToInput(g.Snakes[i], g.Foods[0], g.Board)
 		}
-		outputs[i] = nn.Predict(inputs[i]...)
+		outputs[i] = nn.Predict(inputs...)
 	}
 	for i := range directions {
 		directions[i] = make([]game.Direction, len(md.nn))

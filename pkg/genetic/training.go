@@ -2,8 +2,13 @@ package genetic
 
 import (
 	"fmt"
+	"time"
 	"math/rand"
 )
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 func generateRandPopulation(solSize, popSize int) [][]float64 {
 	pop := make([][]float64, popSize)
