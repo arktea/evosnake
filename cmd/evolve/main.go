@@ -1,56 +1,26 @@
 package main
 
 import (
-	// "math"
+	"fmt"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
-	"fmt"
-	
-	"gonum.org/v1/gonum/mat"
 
 	"github.com/taebow/evosnake/pkg/game"
 	"github.com/taebow/evosnake/pkg/genetic"
 	"github.com/taebow/evosnake/pkg/nn"
+	"github.com/taebow/evosnake/pkg/nndriver"
+	"github.com/taebow/evosnake/pkg/persist"
 )
 
-var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 24, 24, 4)
-
-type NNDriver struct {
-	nn *nn.NeuralNet
-}
-
-func newNNDriver(nnConfig *nn.NeuralNetConfig, weights []float64) *NNDriver {
-	nn := nn.NewNN(nnConfig)
-	nn.InitFromRawWeights(weights)
-	return &NNDriver{nn: nn}
-}
-
-func (d *NNDriver) GetDirection(s *game.Snake, g *game.Game) game.Direction {
-	inputs := s.See(g.Foods[0], g.Board)
-	inputsMat := mat.NewDense(1, len(inputs), inputs)
-	outputs := d.nn.Predict(inputsMat)
-	directionInt := argMax(outputs.RawMatrix().Data)
-	var direction game.Direction
-	switch directionInt {
-	case 0:
-		direction = game.Up
-	case 1:
-		direction = game.Down
-	case 2:
-		direction = game.Left
-	case 3:
-		direction = game.Right
-	}
-	return direction
-}
+var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 12, 12, 4)
 
 
-
-func newPopulation(genes, size int) [][]float64 {
+func newPopulation(nnConfig *nn.NeuralNetConfig, size int) [][]float64 {
 	pop := make([][]float64, size)
 	for i := range pop {
-		pop[i] = make([]float64, genes)
+		pop[i] = make([]float64, nnConfig.RawSize())
 		for j := range pop[i] {
 			pop[i][j] = (rand.Float64() * 2) - 1
 		}
@@ -59,28 +29,38 @@ func newPopulation(genes, size int) [][]float64 {
 }
 
 func PlayGame(rounds int, individual []float64) int {
-	nnDriver := newNNDriver(nnConfig, individual)
-	g := game.NewGame(50, 50, 20, 1, 1)
-	g.Run(rounds, -1, false, []game.Driver{nnDriver})
-	return g.Snakes[0].MaxScore * 100 - 10*(g.Snakes[0].Deaths*g.Snakes[0].Deaths)
+	nnDriver := nndriver.NewNNDriver(nnConfig, individual)
+	g := game.NewGame(50, 50, 45, 1, 1)
+	g.Run(rounds, -1, false, nnDriver)
+	maxScore := g.Snakes[0].MaxScore
+	deaths := g.Snakes[0].Deaths
+	return 100*maxScore - 10*(deaths*deaths)
 }
 
-func PlaySnake(individual []float64) {
-	nnDriver := newNNDriver(nnConfig, individual)
-	g := game.NewGame(50, 50, 5, 1, 1)
-	g.Run(-1, 25, true, []game.Driver{nnDriver})
-}
-
-func argMax(s []float64) int {
-	var max float64
-	var index int
-	for i := range s {
-		if s[i] > max {
-			max = s[i]
-			index = i
-		}
+func PlaySnakes(individuals [][]float64) {
+	nnDrivers := make([]game.Driver, len(individuals))
+	for i := range nnDrivers {
+		nnDrivers[i] = nndriver.NewNNDriver(nnConfig, individuals[i])
 	}
-	return index
+	// nnDriver := newNNDriver(nnConfig, individual)
+	g := game.NewGame(50, 50, 5, len(individuals), 1)
+	g.Run(-1, 25, true, nnDrivers...)
+}
+
+func MultiPlayGames(rounds int, individual []float64, nGames int) int {
+	multiDriver := nndriver.NewMultiDriver([]*nn.NeuralNetConfig{nnConfig}, [][]float64{individual})
+	games := make([]*game.Game, nGames)
+	for i := range games {
+		games[i] = game.NewGame(50, 50, 20, 1, 1)
+	}
+	game.RunMulti(games, rounds, multiDriver)
+	fitnessSlice := make([]int, len(games))
+	for i, g := range games {
+		maxScore := g.Snakes[0].MaxScore
+		deaths := g.Snakes[0].Deaths
+		fitnessSlice[i] = 10*maxScore - (deaths*deaths)
+	}
+	return 10*min(fitnessSlice) + avg(fitnessSlice)
 }
 
 func max(s []int) int {
@@ -103,35 +83,69 @@ func min(s []int) int {
 	return m
 }
 
-func train(nGenerations int) []float64 {
-	n := len(nn.NewNN(nnConfig).GetRawWeights())
-	pop := newPopulation(n, 100)
-	var popBest [][]float64
-	var popFitness, fitBest []int
-	var record []float64
-	var fitnessRecord int = math.MinInt
-	for nGen := 1; nGen <= nGenerations; nGen++ {
-		popFitness = make([]int, 100)
-		for i, individual := range pop {
-			popFitness[i] = PlayGame(1000, individual)
-		}
-		if max(popFitness) > min(fitBest) || len(fitBest) == 0 {
-			popBest, fitBest = genetic.SelectBest(pop, popFitness, 10)
-		}
-		if r, f := genetic.SelectBest(popBest, fitBest, 1); f[0] > fitnessRecord {
-			record = r[0]
-			fitnessRecord = f[0]
-		} 
-		fmt.Printf("Trained generation %v, Record: %v\n", nGen, fitnessRecord)
-		popChild := genetic.Crossover(popBest, 90)
-		genetic.Mutate(popChild, 20)
-		pop = append(popBest, popChild...)
+func avg(s []int) int {
+	var sum int
+	for _, v := range s {
+		sum += v
 	}
-	return record
+	return sum / len(s)
+}
+
+func std(s []int) int {
+	s2 := make([]int, len(s))
+	for i := range s2 {
+		s2[i] = s[i]*s[i]
+	}
+	return int(math.Sqrt(float64(avg(s2) - avg(s))))
+}
+
+
+type FitFunc func (individual []float64) int
+
+func train(nGenerations, genSize int, selectionRate, mutationRate float64, f FitFunc) ([][]float64, []int) {
+	pop := newPopulation(nnConfig, genSize)
+	var popBest, popMax [][]float64
+	var fitBest, fitMax []int
+	popFitness := make([]int, genSize)
+
+	for nGen := 1; nGen <= nGenerations; nGen++ {
+		var wg sync.WaitGroup
+		for i, individual := range pop {
+			wg.Add(1)
+			go func(i int, individual []float64) {
+				popFitness[i] = f(individual)
+				wg.Done()
+			}(i, individual)
+		}
+		wg.Wait()
+		if len(fitBest) == 0 || max(popFitness) > min(fitBest) {
+			popBest, fitBest = genetic.SelectRateBest(
+				pop, 
+				popFitness, 
+				selectionRate,
+			)
+			popMax, fitMax = genetic.SelectNBest(
+				append(popBest, popMax...),
+				append(fitBest, fitMax...),
+				len(popBest),
+			)
+		}
+		_, fitMaxMax :=  genetic.SelectNBest(popMax, fitMax, 1)
+		fmt.Printf("Trained generation %v, Max: %v, Elite %v\n", nGen, fitMaxMax, fitBest)
+		popChild := genetic.Crossover(popBest, genSize)
+		genetic.Mutate(popChild, mutationRate)
+		pop = popChild
+	}
+	return popMax, fitMax
 }
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	best := train(2000)
-	PlaySnake(best)
+	f := func (individual []float64) int {return MultiPlayGames(2000, individual, 5)}
+	// f := func (individual []float64) int {return PlayGame(5000, individual)}
+	records, fitRecords := train(2000, 100, 0.05, 0.1, f)
+	record, _ := genetic.SelectNBest(records, fitRecords, 1)
+	model := persist.NewModel(nnConfig.Layers, record[0])
+	persist.Save("killer", model)
+	PlaySnakes(record)
 }

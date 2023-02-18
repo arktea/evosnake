@@ -10,6 +10,9 @@ type Driver interface {
 	GetDirection(*Snake, *Game) Direction
 }
 
+type MultiDriver interface {
+	GetDirections([]*Game) [][]Direction
+}
 
 type KeyboardDriver struct {
 	buffer []Direction
@@ -17,7 +20,7 @@ type KeyboardDriver struct {
 	maxBufferSize int
 }
 
-func newKeyboardDriver(maxBufferSize int) *KeyboardDriver {
+func NewKeyboardDriver(maxBufferSize int) *KeyboardDriver {
 	return &KeyboardDriver{maxBufferSize: maxBufferSize}
 }
 

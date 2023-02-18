@@ -1,11 +1,7 @@
 package game
 
-import (
-	"time"
-	"math/rand"
+import "time"
 
-	// "github.com/veandco/go-sdl2/sdl"
-)
 
 type Game struct {
 	initSnakeSize int
@@ -36,18 +32,11 @@ func (g *Game) initFoods(n int) {
 	}
 }
 
-func (g *Game) initBrains(drivers []Driver) {
-	numDrivers := len(drivers)
+func (g *Game) update(directions ...Direction) {
 	for i, snake := range g.Snakes {
-		if i < numDrivers {
-			snake.driver = drivers[i]
+		if i < len(directions) {
+			snake.UpdateDirection(directions[i])
 		}
-	}
-}
-
-func (g *Game) Update() {
-	for _, snake := range g.Snakes {
-		snake.UpdateDirection(g)
 		if collide, elem := snake.nextMoveCollide(g.Board); collide {
 			if elem == nil || elem.elementType == Block {
 				snake.die(g.Board)
@@ -63,36 +52,46 @@ func (g *Game) Update() {
 	}
 }
 
-func (g *Game) Run(rounds, frameRate int, gui bool, drivers []Driver) {
+func (g *Game) getDirections(drivers []Driver) []Direction {
+	directions := make([]Direction, len(drivers))
+	for i, driver := range(drivers) {
+		directions[i] = driver.GetDirection(g.Snakes[i], g)
+	}
+	return directions
+}
+
+func (g *Game) Run(rounds, frameRate int, gui bool, drivers ...Driver) {
 	var ui *UI
 	if gui {
 		ui = NewUI(g.Board.Width, g.Board.Height, 8)
 		defer ui.Close()
 	}
-	g.initBrains(drivers)
 	lastRefresh := time.Now()
 	running := true
 	for running {
+		if rounds >= 0 {
+			rounds--
+			if rounds < 0 {
+				break
+			}
+		}
 		if time.Since(lastRefresh) > time.Second/time.Duration(frameRate) {
-			lastRefresh = time.Now()
-			g.Update()
+			g.update(g.getDirections(drivers)...)
 			if gui {
 				g.Draw(ui)
 				g.DisplayState(ui)
 			}
-		}
-		if rounds >= 0 {
-			rounds--
-			if rounds <= 0 {
-				break
-			}
+			lastRefresh = time.Now()
 		}
 		running = manageEvents(drivers[0])
 	}
 }
 
-func PlayManual(frameRate int) {
-	rand.Seed(time.Now().UTC().UnixNano())
-	game := NewGame(50, 50, 5, 1, 1)
-	game.Run(-1, frameRate, true, []Driver{newKeyboardDriver(3)})
+func RunMulti(games []*Game, rounds int, multiDriver MultiDriver) {
+	for i := 0; i<rounds; i++ {
+		directions := multiDriver.GetDirections(games)
+		for i, g := range games {
+			g.update(directions[i]...)
+		}
+	}
 }

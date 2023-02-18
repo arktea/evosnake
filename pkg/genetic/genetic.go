@@ -5,9 +5,11 @@ import (
 	"math/rand"
 )
 
-func SelectBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) {
+func SelectNBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) {
 	bestFitness, bestIndividual := make([]int, n), make([][]float64, n)
-	for i := range bestFitness {bestFitness[i] = math.MinInt}
+	for i := range bestFitness {
+		bestFitness[i] = math.MinInt
+	}
 	for i, fitness := range popFitness {
 		minBest := math.MaxInt
 		var minBestIndex int
@@ -23,6 +25,10 @@ func SelectBest(pop [][]float64, popFitness []int, n int) ([][]float64, []int) {
 		}
 	}
 	return bestIndividual, bestFitness
+}
+
+func SelectRateBest(pop [][]float64, popFitness []int, rate float64) ([][]float64, []int) {
+	return SelectNBest(pop, popFitness, int(float64(len(pop)) * rate))
 }
 
 func Crossover(pop [][]float64, n int) [][]float64 {
@@ -43,10 +49,11 @@ func Crossover(pop [][]float64, n int) [][]float64 {
 	return res
 }
 
-func Mutate(pop [][]float64, n int) {
+func Mutate(pop [][]float64, rate float64) {
+	n := int(float64(len(pop)) * rate)
 	for i := range pop {
-		for j := 0; j<rand.Intn(n); j++ {
-			pop[i][rand.Intn(len(pop[i]))] = (rand.Float64() * 2)-1
+		for j := 0; j < rand.Intn(n); j++ {
+			pop[i][rand.Intn(len(pop[i]))] = (rand.Float64() * 2) - 1
 		}
-	}	
+	}
 }

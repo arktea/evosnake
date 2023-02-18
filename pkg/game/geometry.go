@@ -6,7 +6,7 @@ import (
 )
 
 type Coordinates struct {
-	x, y int
+	X, Y int
 }
 
 type Direction Coordinates
@@ -16,10 +16,10 @@ type Rect struct {
 }
 
 var (
-	Up = Direction{x: 0, y: -1}
-	Down = Direction{x: 0, y: 1}
-	Left = Direction{x: -1, y: 0}
-	Right = Direction{x: 1, y: 0}
+	Up = Direction{X: 0, Y: -1}
+	Down = Direction{X: 0, Y: 1}
+	Left = Direction{X: -1, Y: 0}
+	Right = Direction{X: 1, Y: 0}
 )
 
 func randDirection() Direction {
@@ -31,11 +31,11 @@ func randDirection() Direction {
 }
 
 func (c Coordinates) add(other Coordinates) Coordinates {
-	return Coordinates{x: c.x + other.x, y: c.y + other.y}
+	return Coordinates{X: c.X + other.X, Y: c.Y + other.Y}
 }
 
 func (c Coordinates) sub(other Coordinates) Coordinates {
-	return Coordinates{x: c.x - other.x, y: c.y - other.y}
+	return Coordinates{X: c.X - other.X, Y: c.Y - other.Y}
 }
 
 type directionMethod func (Coordinates, Direction) Coordinates
@@ -49,18 +49,18 @@ func (c Coordinates) backward(d Direction) Coordinates {
 }
 
 func (c Coordinates) left(d Direction) Coordinates {
-	return Coordinates{x: c.x + d.y, y: c.y - d.x}
+	return Coordinates{X: c.X + d.Y, Y: c.Y - d.X}
 }
 
 func (c Coordinates) right(d Direction) Coordinates {
-	return Coordinates{x: c.x - d.y, y: c.y + d.x}
+	return Coordinates{X: c.X - d.Y, Y: c.Y + d.Y}
 }
 
 func calcRect(coordinates []Coordinates) Rect {
 	var sx, sy []int
 	for _, c := range coordinates {
-		sx = append(sx, c.x)
-		sy = append(sy, c.y)
+		sx = append(sx, c.X)
+		sy = append(sy, c.Y)
 	}
 	minMax := func (s []int) (min, max int) {
 		min, max = math.MaxInt, math.MinInt
@@ -82,7 +82,7 @@ func (r Rect) getCoordinates() []Coordinates {
 	c := make([]Coordinates, r.w*r.h)
 	for i := 0; i<r.w; i++ {
 		for j := 0; j<r.h; j++ {
-			c[i*r.h+j] = Coordinates{x: r.x+i, y: r.y+j}
+			c[i*r.h+j] = Coordinates{X: r.x+i, Y: r.y+j}
 		}
 	}
 	return c
