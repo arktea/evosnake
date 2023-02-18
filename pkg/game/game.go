@@ -1,9 +1,7 @@
 package game
 
-import (
-	"time"
-	"math/rand"
-)
+import "time"
+
 
 type Game struct {
 	initSnakeSize int
@@ -96,10 +94,4 @@ func RunMulti(games []*Game, rounds int, multiDriver MultiDriver) {
 			g.update(directions[i]...)
 		}
 	}
-}
-
-func PlayManual(frameRate int) {
-	rand.Seed(time.Now().UTC().UnixNano())
-	game := NewGame(50, 50, 5, 1, 1)
-	game.Run(-1, frameRate, true, newKeyboardDriver(3))
 }

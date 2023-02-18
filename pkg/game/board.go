@@ -16,20 +16,20 @@ func newBoard(width, height int) *Board {
 }
 
 func (b *Board) isValid(c Coordinates) bool {
-	return c.x >= 0 && c.x < b.Width && c.y >= 0 && c.y < b.Height
+	return c.X >= 0 && c.X < b.Width && c.Y >= 0 && c.Y < b.Height
 }
 
 func (b *Board) set(elems ...*Element) {
 	for _, e := range elems {
 		if b.isValid(e.Coordinates) {
-			b.board[e.x][e.y] = e
+			b.board[e.X][e.Y] = e
 		}
 	}
 }
 
 func (b *Board) get(c Coordinates) *Element {
 	if b.isValid(c) {
-		return b.board[c.x][c.y]
+		return b.board[c.X][c.Y]
 	}
 	return nil
 }
@@ -37,12 +37,12 @@ func (b *Board) get(c Coordinates) *Element {
 func (b *Board) free(elems ...*Element) {
 	for _, e := range elems {
 		if b.isValid(e.Coordinates) {
-			b.board[e.x][e.y] = nil
+			b.board[e.X][e.Y] = nil
 		}
 	}
 }
 
-func (b *Board) collide(coordinates ...Coordinates) (bool, *Element) {
+func (b *Board) Collide(coordinates ...Coordinates) (bool, *Element) {
 	for _, c := range coordinates {
 		elem := b.get(c)
 		if elem != nil {
@@ -57,7 +57,7 @@ func (b *Board) collide(coordinates ...Coordinates) (bool, *Element) {
 func (b *Board) randCoordinates() Coordinates {
 	for {
 		c := Coordinates{rand.Int() % b.Width, rand.Int() % b.Height}
-		if collide, _ := b.collide(c); !collide {
+		if collide, _ := b.Collide(c); !collide {
 			return c
 		}
 	}
@@ -78,7 +78,7 @@ func (b *Board) newSnake(size int) *Snake {
 	for {
 		s := newSnake(b.randCoordinates(), size, randDirection())
 		if s.hasSpace(b) {
-			b.set(s.body...)
+			b.set(s.Body...)
 			return s
 		} 
 	}
@@ -88,8 +88,18 @@ func (b *Board) respawnSnake(s *Snake, size int) {
 	for {
 		s.respawn(b.randCoordinates(), size, randDirection())
 		if s.hasSpace(b) {
-			b.set(s.body...)
+			b.set(s.Body...)
 			break
 		}
 	}
+}
+
+func (b *Board) IsDanger(c Coordinates) bool {
+	if collide, _ := b.Collide(c); collide {
+		elem := b.get(c)
+		if elem == nil || elem.elementType == Block {
+			return true
+		}
+	}
+	return false
 }

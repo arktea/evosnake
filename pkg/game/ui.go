@@ -37,14 +37,14 @@ func (ui *UI) Close() {
 }
 
 func (e *Element) draw(ui *UI) {
-	rect := sdl.Rect{X: int32(e.x * ui.tileSize), Y: int32(e.y * ui.tileSize), 
+	rect := sdl.Rect{X: int32(e.X * ui.tileSize), Y: int32(e.Y * ui.tileSize), 
 		W: int32(ui.tileSize), H: int32(ui.tileSize)}
 	colorCode := sdl.MapRGB(ui.surface.Format, e.color[0], e.color[1], e.color[2])
 	ui.surface.FillRect(&rect, colorCode)
 }
 
 func (s Snake) draw(ui *UI) {
-	for _, block := range s.body {
+	for _, block := range s.Body {
 		block.draw(ui)
 	}
 }

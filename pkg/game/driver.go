@@ -20,7 +20,7 @@ type KeyboardDriver struct {
 	maxBufferSize int
 }
 
-func newKeyboardDriver(maxBufferSize int) *KeyboardDriver {
+func NewKeyboardDriver(maxBufferSize int) *KeyboardDriver {
 	return &KeyboardDriver{maxBufferSize: maxBufferSize}
 }
 

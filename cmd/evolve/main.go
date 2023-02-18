@@ -10,74 +10,11 @@ import (
 	"github.com/taebow/evosnake/pkg/game"
 	"github.com/taebow/evosnake/pkg/genetic"
 	"github.com/taebow/evosnake/pkg/nn"
+	"github.com/taebow/evosnake/pkg/nndriver"
 )
 
-var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 32, 16, 8, 4)
+var nnConfig *nn.NeuralNetConfig = nn.NewNNConfig(8, 16, 8, 4)
 
-func outputToDirection (output []float64) game.Direction {
-	directionInt := argMax(output)
-	var direction game.Direction
-	switch directionInt {
-	case 0:
-		direction = game.Up
-	case 1:
-		direction = game.Down
-	case 2:
-		direction = game.Left
-	case 3:
-		direction = game.Right
-	}
-	return direction
-}
-
-type NNDriver struct {
-	nn *nn.NeuralNet
-}
-
-func newNNDriver(nnConfig *nn.NeuralNetConfig, weights []float64) *NNDriver {
-	nn := nn.NewNN(nnConfig, weights)
-	return &NNDriver{nn: nn}
-}
-
-func (d *NNDriver) GetDirection(s *game.Snake, g *game.Game) game.Direction {
-	inputs := s.See(g.Foods[0], g.Board)
-	outputs := d.nn.Predict(inputs)
-	return outputToDirection(outputs[0])
-}
-
-type MultiDriver struct {
-	nn []*nn.NeuralNet
-}
-
-func newMultiDriver(nnConfigs []*nn.NeuralNetConfig, weights [][]float64) *MultiDriver {
-	neuralNets := make([]*nn.NeuralNet, len(nnConfigs))
-	for i, config := range nnConfigs {
-		neuralNets[i] = nn.NewNN(config, weights[i])
-	}
-	return &MultiDriver{nn: neuralNets}
-}
-
-func (md *MultiDriver) GetDirections(games []*game.Game) [][]game.Direction {
-	inputs := make([][][]float64, len(md.nn))
-	outputs := make([][][]float64, len(md.nn))
-	directions := make([][]game.Direction, len(games))
-	for i, nn := range md.nn {
-		inputs[i] = make([][]float64, len(games))
-		for j, g := range games {
-			inputs[i][j] =  g.Snakes[i].See(g.Foods[0], g.Board)
-		}
-		outputs[i] = nn.Predict(inputs[i]...)
-	}
-	for i := range directions {
-		directions[i] = make([]game.Direction, len(md.nn))
-	}
-	for i := range outputs {
-		for j := range outputs[i] {
-			directions[j][i] = outputToDirection(outputs[i][j])
-		}
-	}
-	return directions
-}
 
 func newPopulation(nnConfig *nn.NeuralNetConfig, size int) [][]float64 {
 	pop := make([][]float64, size)
@@ -91,7 +28,7 @@ func newPopulation(nnConfig *nn.NeuralNetConfig, size int) [][]float64 {
 }
 
 func PlayGame(rounds int, individual []float64) int {
-	nnDriver := newNNDriver(nnConfig, individual)
+	nnDriver := nndriver.NewNNDriver(nnConfig, individual)
 	g := game.NewGame(50, 50, 45, 1, 1)
 	g.Run(rounds, -1, false, nnDriver)
 	maxScore := g.Snakes[0].MaxScore
@@ -102,7 +39,7 @@ func PlayGame(rounds int, individual []float64) int {
 func PlaySnakes(individuals [][]float64) {
 	nnDrivers := make([]game.Driver, len(individuals))
 	for i := range nnDrivers {
-		nnDrivers[i] = newNNDriver(nnConfig, individuals[i])
+		nnDrivers[i] = nndriver.NewNNDriver(nnConfig, individuals[i])
 	}
 	// nnDriver := newNNDriver(nnConfig, individual)
 	g := game.NewGame(50, 50, 5, len(individuals), 1)
@@ -110,7 +47,7 @@ func PlaySnakes(individuals [][]float64) {
 }
 
 func MultiPlayGames(rounds int, individual []float64, nGames int) int {
-	multiDriver := newMultiDriver([]*nn.NeuralNetConfig{nnConfig}, [][]float64{individual})
+	multiDriver := nndriver.NewMultiDriver([]*nn.NeuralNetConfig{nnConfig}, [][]float64{individual})
 	games := make([]*game.Game, nGames)
 	for i := range games {
 		games[i] = game.NewGame(50, 50, 20, 1, 1)
@@ -123,18 +60,6 @@ func MultiPlayGames(rounds int, individual []float64, nGames int) int {
 		fitnessSlice[i] = 10*maxScore - (deaths*deaths)
 	}
 	return 10*min(fitnessSlice) + avg(fitnessSlice)
-}
-
-func argMax(s []float64) int {
-	var max float64
-	var index int
-	for i := range s {
-		if s[i] > max {
-			max = s[i]
-			index = i
-		}
-	}
-	return index
 }
 
 func max(s []int) int {
@@ -215,9 +140,9 @@ func train(nGenerations, genSize int, selectionRate, mutationRate float64, f Fit
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	f := func (individual []float64) int {return MultiPlayGames(1000, individual, 5)}
+	f := func (individual []float64) int {return MultiPlayGames(2000, individual, 5)}
 	// f := func (individual []float64) int {return PlayGame(5000, individual)}
-	records, fitRecords := train(2000, 100, 0.05, 0.1, f)
+	records, fitRecords := train(200, 100, 0.05, 0.1, f)
 	record, _ := genetic.SelectNBest(records, fitRecords, 1)
 	PlaySnakes(record)
 }

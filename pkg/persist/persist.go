@@ -1,4 +1,4 @@
-package evosnake
+package persist
 
 import (
 	"os"
