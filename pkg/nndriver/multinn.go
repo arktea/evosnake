@@ -5,35 +5,23 @@ import (
 	"github.com/taebow/evosnake/pkg/nn"
 )
 
-type MultiDriver struct {
-	nn []*nn.NeuralNet
+type MultiNNDriver struct {
+	nn *nn.NeuralNet
 }
 
-func NewMultiDriver(models []*nn.Model) *MultiDriver {
-	neuralNets := make([]*nn.NeuralNet, len(models))
-	for i, model := range models {
-		neuralNets[i] = nn.NewNN(model)
-	}
-	return &MultiDriver{nn: neuralNets}
+func NewMultiNNDriver(model *nn.Model) *MultiNNDriver {
+	return &MultiNNDriver{nn: nn.NewNN(model)}
 }
 
-func (md *MultiDriver) GetDirections(games []*game.Game) [][]game.Direction {
-	outputs := make([][][]float64, len(md.nn))
-	directions := make([][]game.Direction, len(games))
-	for i, nn := range md.nn {
-		inputs := make([][]float64, len(games))
-		for j, g := range games {
-			inputs[j] =  gameToInput(g.Snakes[i], g.Foods[0], g.Board)
-		}
-		outputs[i] = nn.Predict(inputs...)
+func (md *MultiNNDriver) GetDirections(snakes []*game.Snake, games []*game.Game) []game.Direction {
+	directions := make([]game.Direction, len(games))
+	inputs := make([][]float64, len(games))
+	for i, g := range games {
+		inputs[i] =  gameToInput(snakes[i], g.Foods[0], g.Board)
 	}
-	for i := range directions {
-		directions[i] = make([]game.Direction, len(md.nn))
-	}
+	outputs := md.nn.Predict(inputs...)
 	for i := range outputs {
-		for j := range outputs[i] {
-			directions[j][i] = outputToDirection(outputs[i][j])
-		}
+		directions[i] = outputToDirection(outputs[i])
 	}
 	return directions
 }

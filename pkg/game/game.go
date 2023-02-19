@@ -1,8 +1,8 @@
 package game
 
 import (
-	"time"
 	"math/rand"
+	"time"
 )
 
 func init() {
@@ -92,11 +92,22 @@ func (g *Game) Run(rounds, frameRate int, gui bool, drivers ...Driver) {
 	}
 }
 
-func RunMulti(games []*Game, rounds int, multiDriver MultiDriver) {
-	for i := 0; i<rounds; i++ {
-		directions := multiDriver.GetDirections(games)
+func RunMulti(games []*Game, rounds int, multiDrivers ...MultiDriver) {
+	for r := 0; r<rounds; r++ {
+		dirsByDrivers := make([][]Direction, len(multiDrivers))
+		for i, md := range multiDrivers {
+			snakes := make([]*Snake, len(games))
+			for j, g := range games {
+				snakes[j] = g.Snakes[i]
+			}
+			dirsByDrivers[i] = md.GetDirections(snakes, games)
+		}
 		for i, g := range games {
-			g.update(directions[i]...)
+			directions := make([]Direction, len(multiDrivers))
+			for j := range multiDrivers {
+				directions[j] = dirsByDrivers[j][i]
+			}
+			g.update(directions...)
 		}
 	}
 }

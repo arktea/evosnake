@@ -16,7 +16,7 @@ func PlaySnakes(rounds int, models ...*nn.Model) *game.Game {
 }
 
 func PlayOneSnakeMultiGames(rounds int, nGames int, model *nn.Model) []*game.Game {
-	multiDriver := NewMultiDriver([]*nn.Model{model})
+	multiDriver := NewMultiNNDriver(model)
 	games := make([]*game.Game, nGames)
 	for i := range games {
 		games[i] = game.NewGame(50, 50, 20, 1, 1)

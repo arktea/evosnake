@@ -7,15 +7,15 @@ import (
 )
 
 func main() {
-	modelConfig := nn.ModelConfig{8, 4}
+	modelConfig := nn.ModelConfig{8, 16, 16, 4}
 	fitness := func (solution []float64) int {
 		model := nn.NewModel(modelConfig, solution)
-		games := nndriver.PlayOneSnakeMultiGames(5000, 10, model)
+		games := nndriver.PlayOneSnakeMultiGames(5000, 5, model)
 		return genetic.EvaluateMultiGames(games)
 	}
-	solutions, fitSolutions := genetic.Train(20, modelConfig.Size(), 100, 5, 0.05, fitness)
+	solutions, fitSolutions := genetic.Train(2000, modelConfig.Size(), 100, 5, 0.05, fitness)
 	best, _ := genetic.SelectBest(solutions, fitSolutions)
 	model := nn.NewModel(modelConfig, best)
-	nn.SaveModel("dumber", model)
+	nn.SaveModel("theodor", model)
 	nndriver.PlaySnakes(-1, model)
 }
