@@ -10,12 +10,12 @@ func main() {
 	modelConfig := nn.ModelConfig{8, 4}
 	fitness := func (solution []float64) int {
 		model := nn.NewModel(modelConfig, solution)
-		games := nndriver.PlayOneSnakeMultiGames(500, 10, model)
+		games := nndriver.PlayOneSnakeMultiGames(5000, 10, model)
 		return genetic.EvaluateMultiGames(games)
 	}
-	solutions, fitSolutions := genetic.Train(1000, modelConfig.Size(), 100, 5, 0.05, fitness)
+	solutions, fitSolutions := genetic.Train(20, modelConfig.Size(), 100, 5, 0.05, fitness)
 	best, _ := genetic.SelectBest(solutions, fitSolutions)
 	model := nn.NewModel(modelConfig, best)
-	nn.SaveModel("polnaref", model)
+	nn.SaveModel("dumber", model)
 	nndriver.PlaySnakes(-1, model)
 }

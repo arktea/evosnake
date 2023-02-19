@@ -11,7 +11,7 @@ func PlaySnakes(rounds int, models ...*nn.Model) *game.Game {
 		nnDrivers[i] = NewNNDriver(model)
 	}
 	g := game.NewGame(50, 50, 5, len(models), 1)
-	g.Run(rounds, 25, true, nnDrivers...)
+	g.Run(rounds, 50, true, nnDrivers...)
 	return g
 }
 
