@@ -3,15 +3,14 @@ package game
 type Snake struct {
 	Body      []*Element
 	Direction Direction
-	color     [3]uint8
 	Deaths    int
 	MaxScore  int
 	score     int
 }
 
+
 func newSnake(c Coordinates, size int, direction Direction) *Snake {
-	color := [...]uint8{0x00, 0xaa, 0x00}
-	snake := &Snake{Direction: direction, color: color}
+	snake := &Snake{Direction: direction, score: 0}
 	snake.initBody(c, size)
 	return snake
 }
@@ -73,7 +72,7 @@ func (s *Snake) grow() {
 }
 
 func (s *Snake) newBodyElement(c Coordinates) *Element {
-	return newElement(c, s.color, Block)
+	return newElement(c, Block)
 }
 
 func (s *Snake) move(b *Board) {

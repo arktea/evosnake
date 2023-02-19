@@ -64,7 +64,7 @@ func (b *Board) randCoordinates() Coordinates {
 }
 
 func (b *Board) newFood() *Element {
-	elem := newElement(b.randCoordinates(), [3]uint8{0xff, 0xaa, 00}, Food)
+	elem := newElement(b.randCoordinates(), Food)
 	b.set(elem)
 	return elem
 }

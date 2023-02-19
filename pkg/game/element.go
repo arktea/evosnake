@@ -9,10 +9,9 @@ const (
 
 type Element struct {
 	Coordinates
-	color [3]uint8
 	elementType ElementType
 }
 
-func newElement(c Coordinates, color [3]uint8, t ElementType) *Element {
-	return &Element{c, color, t}
+func newElement(c Coordinates, t ElementType) *Element {
+	return &Element{c, t}
 }

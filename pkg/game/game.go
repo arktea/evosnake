@@ -69,7 +69,7 @@ func (g *Game) getDirections(drivers []Driver) []Direction {
 func (g *Game) Run(rounds, frameRate int, gui bool, drivers ...Driver) {
 	var ui *UI
 	if gui {
-		ui = NewUI(g.Board.Width, g.Board.Height, 8)
+		ui = NewUI(g.Board.Width, g.Board.Height, 8, len(g.Snakes) > 1)
 		defer ui.Close()
 	}
 	lastRefresh := time.Now()
@@ -85,7 +85,6 @@ func (g *Game) Run(rounds, frameRate int, gui bool, drivers ...Driver) {
 			g.update(g.getDirections(drivers)...)
 			if gui {
 				g.Draw(ui)
-				g.DisplayState(ui)
 			}
 			lastRefresh = time.Now()
 		}
